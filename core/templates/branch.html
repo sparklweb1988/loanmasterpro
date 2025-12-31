@@ -1,0 +1,63 @@
+{% extends 'base.html' %} {% block content %}
+<div class="container">
+  <br />
+  <h2>Branch</h2>
+  <form method="POST" action="{% url 'branch_view' %}">
+    {% csrf_token %}
+
+    <div class="form-group">
+      <label for="name">Name</label>
+      <input type="text" name="name" id="name" />
+    </div>
+    <br />
+    <div class="form-group">
+      <button type="submit">Submit</button>
+      <br /><br />
+      <a href="{% url 'dashboard' %}">Cancel</a>
+    </div>
+  </form>
+
+  <!-- Desktop Table View -->
+  <div class="desktop-view">
+    <table>
+      <thead>
+        <tr>
+          <th>Branch Name</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for branch in branches %}
+        <tr>
+          <td>{{branch.name}}</td>
+
+          <td>
+            <a href="{% url 'edit_branch_view' branch.id %}">Edit</a> |
+            <a href="{% url 'delete_branch_view' branch.id %}">Delete</a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5">No branch found</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Mobile Card View -->
+  <div class="mobile-view">
+    {% for branch in branches %}
+    <div class="mobile-card">
+      <h3>{{branch.name}}</h3>
+      <div class="mobile-actions">
+        <a href="{% url 'edit_branch_view' branch.id %}">Edit</a> |
+        <a href="{% url 'delete_branch_view' branch.id %}">Delete</a>
+      </div>
+    </div>
+    {% empty %}
+    <p>No branch found.</p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

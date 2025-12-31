@@ -1,0 +1,140 @@
+{% extends 'base.html' %} {% block content %}
+<div class="container">
+  <br />
+  <h2>Transaction Report</h2>
+  <br />
+
+
+  <!-- Desktop Table View -->
+  <div class="desktop-view">
+    <table>
+      <thead>
+        <tr>
+          <th>ATTN</th>
+          <!-- Credit Officer -->
+          <th>Client ID</th>
+          <th>Name</th>
+          <th>Deprod1</th>
+          <!-- REGSAVG -->
+          <th>REGSAVG Bal</th>
+          <th>Deprod2</th>
+          <!-- VOLSAVG -->
+          <th>VOLSAVG Bal</th>
+          <th>Total Deposit</th>
+          <th>Loan AMT (P+I)</th>
+          <th>OLB</th>
+          <th>Inst. Amount</th>
+          <th>Overdue</th>
+          <th>Payment</th>
+        </tr>
+      </thead>
+      <tbody>
+
+                {% for data in report_data %}
+                <tr>
+                    <!-- ATTN (Credit Officer) -->
+                    <td>{{ data.client.credit_officer.name }}</td>
+
+                    <!-- CLIENT -->
+                    <td>{{ data.client.client_id }}</td>
+                    <td>{{ data.client.name }}</td>
+
+                    <!-- DEPOSITS -->
+                    <td>REGSAVG</td>
+                    <td>{{ data.reg_balance }}</td>
+                    <td>VOLSAVG</td>
+                    <td>{{ data.vol_balance }}</td>
+                    <td>{{ data.total_deposit }}</td>
+
+                    <!-- LOAN VALUE & INTEREST -->
+                    <td>{{ data.principal_interest }}</td>
+                    <td>{{ data.olb }}</td>
+
+                    <!-- REPAYMENT STRUCTURE -->
+                    <td>{{ data.installment_amount }}</td>
+
+                    <!-- PERFORMANCE -->
+                    <td>{{ data.overdue }}</td>
+                    <td>{{ data.paid }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="13">No data available.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Mobile Card View -->
+    <div class="mobile-view">
+
+        {% for data in report_data %}
+        <tr>
+          <!-- ATTN (Credit Officer) -->
+          <td>{{ data.client.credit_officer.name }}</td>
+
+          <!-- CLIENT -->
+          <td>{{ data.client.client_id }}</td>
+          <td>{{ data.client.name }}</td>
+
+          <!-- DEPOSITS -->
+          <td>REGSAVG</td>
+          <td>{{ data.reg_balance }}</td>
+          <td>VOLSAVG</td>
+          <td>{{ data.vol_balance }}</td>
+          <td>{{ data.total_deposit }}</td>
+
+          <!-- LOAN VALUE & INTEREST -->
+          <td>{{ data.principal_interest }}</td>
+          <td>{{ data.olb }}</td>
+
+          <!-- REPAYMENT STRUCTURE -->
+          <td>{{ data.installment_amount }}</td>
+
+          <!-- PERFORMANCE -->
+          <td>{{ data.overdue }}</td>
+          <td>{{ data.paid }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="13">No data available.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Mobile Card View -->
+  <div class="mobile-view">
+    {% for data in report_data %}
+    <div class="mobile-card">
+      <h3>Client: {{ data.client.name }} ({{ data.client.client_id }})</h3>
+      <p>
+        <strong>ATTN (Credit Officer):</strong> {{
+        data.client.credit_officer.name }}
+      </p>
+
+      <p>
+        <strong>Deposits:</strong> REGSAVG - {{ data.reg_balance }} | VOLSAVG -
+        {{ data.vol_balance }}
+      </p>
+      <p><strong>Total Deposit:</strong> {{ data.total_deposit }}</p>
+
+      <p><strong>Loan AMT (P+I):</strong> {{ data.principal_interest }}</p>
+      <p><strong>OLB (P+I):</strong> {{ data.olb }}</p>
+
+      <p><strong>Installment Amount:</strong> {{ data.installment_amount }}</p>
+
+      <p><strong>Overdue:</strong> {{ data.overdue }}</p>
+      <p><strong>Payment:</strong> {{ data.paid }}</p>
+    </div>
+    {% empty %}
+    <p>No data available.</p>
+    {% endfor %}
+  </div>
+
+  <br />
+  <a href="{% url 'export_excel' %}">Generate Report</a>
+</div>
+{% endblock %}
