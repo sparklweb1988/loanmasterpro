@@ -1,6 +1,6 @@
 from django.forms import ValidationError
 from django.shortcuts import get_object_or_404, redirect, render
-from core.models import Branch, Center, Client, CreditOfficer, Deposit, Loan
+from core.models import Branch, Center, Client, CreditOfficer, Deposit, Loan,PaymentHistory
 from openpyxl import Workbook
 from openpyxl.styles import Font
 from django.http import HttpResponse, HttpResponseBadRequest
@@ -16,6 +16,7 @@ from django.contrib.auth import login,logout, authenticate
 from django.contrib import messages
 from .models import Profile
 from django.utils import timezone
+from django.utils.timezone import now
 
 
 
@@ -293,63 +294,53 @@ def dashboard(request):
 
 
 def transaction(request):
-    # Get all clients
+
     if request.user.is_staff:
         clients = Client.objects.all()
-        
     else:
-         clients = Client.objects.filter(user=request.user)
+        clients = Client.objects.filter(user=request.user)
+
+    # FILTER VALUES
+    branch_id = request.GET.get("branch")
+    center_id = request.GET.get("center")
+    officer_id = request.GET.get("officer")
+
+    # APPLY FILTERS
+    if branch_id:
+        clients = clients.filter(branch_id=branch_id)
+
+    if center_id:
+        clients = clients.filter(center_id=center_id)
+
+    if officer_id:
+        clients = clients.filter(credit_officer_id=officer_id)
 
     report_data = []
 
-    # Loop through clients and gather data for the report
     for client in clients:
-        # Get deposits and loan data
-        reg = Deposit.objects.filter(client=client, product='REGSAVG').first()
-        vol = Deposit.objects.filter(client=client, product='VOLSAVG').first()
+        reg = Deposit.objects.filter(client=client, product="REGSAVG").first()
+        vol = Deposit.objects.filter(client=client, product="VOLSAVG").first()
         loan = Loan.objects.filter(client=client).first()
 
-        # Calculate deposit balances
-        reg_balance = reg.balance if reg else Decimal("0.00")
-        vol_balance = vol.balance if vol else Decimal("0.00")
-        total_deposit = (reg.collected if reg else 0) + (vol.collected if vol else 0)
-
-        # Calculate loan-related fields
-        principal = loan.principal if loan else Decimal("0.00")
-        interest_rate = loan.interest_rate if loan else Decimal("0.00")
-        interest_amount = loan.interest_amount if loan else Decimal("0.00")
-        principal_interest = loan.principal_interest if loan else Decimal("0.00")
-        olb = loan.olb if loan else Decimal("0.00")
-        total_installments = loan.total_installments if loan else 0
-        paid_installments = loan.paid_installments if loan else 0
-        unpaid_installments = loan.unpaid_installments if loan else 0
-        installment_amount = loan.installment_amount if loan else Decimal("0.00")
-        overdue = loan.overdue if loan else Decimal("0.00")
-        paid = loan.paid if loan else Decimal("0.00")
+        if not loan:
+            continue
 
         report_data.append({
-            'client': client,
-            'reg_balance': reg_balance,
-            'vol_balance': vol_balance,
-            'total_deposit': total_deposit,
-            'loan': loan,
-            'principal': principal,
-            'interest_rate': interest_rate,
-            'interest_amount': interest_amount,
-            'principal_interest': principal_interest,
-            'olb': olb,
-            'total_installments': total_installments,
-            'paid_installments': paid_installments,
-            'unpaid_installments': unpaid_installments,
-            'installment_amount': installment_amount,
-            'overdue': overdue,
-            'paid': paid,
+            "client": client,
+            "reg_balance": reg.balance if reg else 0,
+            "vol_balance": vol.balance if vol else 0,
+            "total_deposit": (reg.collected if reg else 0) + (vol.collected if vol else 0),
+            "loan": loan,
         })
 
-    return render(request, 'transaction.html', {'report_data': report_data})
+    context = {
+        "report_data": report_data,
+        "branches": Branch.objects.all(),
+        "centers": Center.objects.all(),
+        "officers": CreditOfficer.objects.all(),
+    }
 
-
-
+    return render(request, "transaction.html", context)
 
 
 
@@ -403,140 +394,74 @@ def delete_client(request, client_id):
 #  NEW EXCEL DOWNLOAD VIEW
 
 def export_feed_excel(request):
+
     wb = Workbook()
     ws = wb.active
     ws.title = "Feed Collection"
 
     headers = [
-        # 1️⃣ ATTENTION / FLAG
-        "ATTN",
-
-        # 2️⃣ CLIENT IDENTIFICATION
-        "Client ID",
-        "Name",
-
-        # 3️⃣ SAVINGS / DEPOSITS
-        "Deprod1",
-        "REGSAVG Bal",
-        "Deprod2",
-        "VOLSAVG Bal",
-        "Total Deposit",
-
-        # 4️⃣ LOAN DEFINITION
-        "Loan Prod",
-        "Start Date",
-        "End Date",
-
-        # 5️⃣ LOAN VALUE & INTEREST
-        "Principal",
-        "Interest %",
-        "Interest",
-        "Loan AMT (P+I)",
-        "OLB",
-
-        # 6️⃣ REPAYMENT STRUCTURE
-        "Total Inst.",
-        "Paid Inst.",
-        "Unpaid Inst.",
-        "Inst. Amount",
-
-        # 7️⃣ PERFORMANCE / RISK
-        "Overdue",
-        "Payment"
+        "ATTN", "CLIENT ID", "NAME",
+        "REGSAVG BAL", "VOLSAVG BAL", "TOTAL DEPOSIT",
+        "PRINCIPAL", "INTEREST %", "INTEREST",
+        "LOAN AMOUNT (P+I)", "OLB",
+        "TOTAL INST.", "PAID INST.", "UNPAID INST.",
+        "INST. AMOUNT", "OVERDUE", "PAYMENT"
     ]
-
     ws.append(headers)
-    for cell in ws[1]:
-        cell.font = Font(bold=True)
 
-    total_expected_deposit = Decimal("0.00")
-    total_repayment_expected = Decimal("0.00")
+    if request.user.is_staff:
+        clients = Client.objects.all()
+    else:
+        clients = Client.objects.filter(user=request.user)
 
-    clients = Client.objects.all()
+    # SAME FILTERS AS TRANSACTION
+    branch_id = request.GET.get("branch")
+    center_id = request.GET.get("center")
+    officer_id = request.GET.get("officer")
+
+    if branch_id:
+        clients = clients.filter(branch_id=branch_id)
+
+    if center_id:
+        clients = clients.filter(center_id=center_id)
+
+    if officer_id:
+        clients = clients.filter(credit_officer_id=officer_id)
 
     for client in clients:
-        reg = Deposit.objects.filter(client=client, product='REGSAVG').first()
-        vol = Deposit.objects.filter(client=client, product='VOLSAVG').first()
+        reg = Deposit.objects.filter(client=client, product="REGSAVG").first()
+        vol = Deposit.objects.filter(client=client, product="VOLSAVG").first()
         loan = Loan.objects.filter(client=client).first()
 
-        # Get Deposit balances
-        reg_bal = reg.balance if reg else Decimal("0.00")
-        vol_bal = vol.balance if vol else Decimal("0.00")
+        if not loan:
+            continue
 
-        # Calculate total deposit
-        total_deposit = (reg.collected if reg else 0) + (vol.collected if vol else 0)
-
-        # Add to the overall totals
-        total_expected_deposit += total_deposit
-        total_repayment_expected += loan.principal_interest if loan else Decimal("0.00")
-
-        # Append the row data for the client
         ws.append([
-            # ATTENTION / FLAG
             client.credit_officer.name,
-
-            # CLIENT
             client.client_id,
             client.name,
-
-            # DEPOSITS
-            "REGSAVG",
-            float(reg_bal),
-            "VOLSAVG",
-            float(vol_bal),
-            float(total_deposit),
-
-            # LOAN DEFINITION
-            loan.product if loan else "N/A",
-            loan.start_date if loan else "N/A",
-            loan.end_date if loan else "N/A",
-
-            # LOAN VALUE & INTEREST
-            float(loan.principal) if loan else 0.00,
-            float(loan.interest_rate) if loan else 0.00,
-            float(loan.interest_amount) if loan else 0.00,
-            float(loan.principal_interest) if loan else 0.00,
-            float(loan.olb) if loan else 0.00,
-
-            # REPAYMENT STRUCTURE
-            loan.total_installments if loan else 0,
-            loan.paid_installments if loan else 0,
-            loan.unpaid_installments if loan else 0,
-            float(loan.installment_amount) if loan else 0.00,
-
-            # PERFORMANCE
-            float(loan.overdue) if loan else 0.00,
-            float(loan.paid) if loan else 0.00,
+            float(reg.balance if reg else 0),
+            float(vol.balance if vol else 0),
+            float((reg.collected if reg else 0) + (vol.collected if vol else 0)),
+            float(loan.principal),
+            float(loan.interest_rate),
+            float(loan.interest_amount),
+            float(loan.principal_interest),
+            float(loan.olb),
+            loan.total_installments,
+            loan.paid_installments,
+            loan.unpaid_installments,
+            float(loan.installment_amount),
+            float(loan.overdue),
+            float(loan.paid),
         ])
 
-    # Add an empty row for separation
-    ws.append([])
-
-    # Add totals row
-    ws.append([
-        "TOTALS", "", "", "", "", "", "",
-        float(total_expected_deposit),
-        "", "", "",
-        "",
-        float(total_repayment_expected),
-        "", "", "", "", "", "", "", "", ""
-    ])
-
-    for cell in ws[ws.max_row]:
-        cell.font = Font(bold=True)
-
-    # Prepare the response for Excel download
     response = HttpResponse(
         content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
     response["Content-Disposition"] = "attachment; filename=feed_collection.xlsx"
-
     wb.save(response)
     return response
-
-
-
-
 
 
 
@@ -925,15 +850,172 @@ def verify_payment(request):
     try:
         # Verify the payment with Paystack using the reference
         response = requests.get(f'https://api.paystack.co/transaction/verify/{reference}', headers=headers)
-        response.raise_for_status()  # Raise error if the request fails
+        response.raise_for_status()
         response_data = response.json()
 
-        if response_data['status'] == 'success' and response_data['data']['status'] == 'success':
-            # Payment was successful, process the payment and redirect to the dashboard
-            # Here, you would update the user's account, create records, etc.
-            return redirect('dashboard')  # Redirect to your dashboard after successful payment
+        # Debug: print Paystack response
+        print("Paystack Verify Response:", response_data)
 
-        return JsonResponse({'error': 'Payment verification failed'}, status=400)
+        # Correct check
+        if response_data.get('status') and response_data.get('data', {}).get('status') == 'success':
+            # Payment successful, update user's plan, log payment, etc.
+            # Example: save PaymentHistory or update Profile
+            amount_paid = response_data['data']['amount'] / 100  # Convert kobo to naira
+            user_email = response_data['data']['customer']['email']
+            reference = response_data['data']['reference']
+
+            # OPTIONAL: Save the payment in your DB
+            # user = request.user
+            # PaymentHistory.objects.create(user=user, amount=amount_paid, reference=reference, ...)
+
+            messages.success(request, f"Payment verified successfully: ₦{amount_paid}")
+            return redirect('dashboard')
+        else:
+            messages.error(request, "Payment verification failed. Please try again.")
+            return redirect('pricing')
 
     except requests.exceptions.RequestException as e:
-        return JsonResponse({'error': f'Request failed: {str(e)}'}, status=500)
+        messages.error(request, f"Request to Paystack failed: {str(e)}")
+        return redirect('pricing')
+
+
+
+
+
+# POST PAYMENT
+def post_payment(request):
+    clients = Client.objects.filter(user=request.user)
+    loans = Loan.objects.filter(user=request.user)
+
+    if request.method == 'POST':
+        client_id = request.POST.get('client_id')
+        loan_id = request.POST.get('loan_id')
+        amount = request.POST.get('amount')
+        # recorded_by = request.POST.get('record')
+
+        client = get_object_or_404(Client, id=client_id, user=request.user)
+        loan = get_object_or_404(Loan, id=loan_id, client=client, user=request.user)
+
+        try:
+            amount = Decimal(amount)
+        except:
+            messages.error(request, "Invalid amount")
+            return redirect("post_payment")
+
+        if amount <= 0:
+            messages.error(request, "Payment must be greater than 0")
+            return redirect("post_payment")
+        if amount > loan.olb:
+            messages.error(request, "Payment exceeds outstanding balance")
+            return redirect("post_payment")
+
+        # Save payment
+        PaymentHistory.objects.create(
+            client=client,
+            loan=loan,
+            amount=amount,
+            payment_date=now().date(),
+            recorded_by= request.user.username
+        )
+
+        # Update loan
+        loan.paid += amount
+        if loan.installment_amount > 0:
+            loan.paid_installments = min(
+                loan.total_installments,
+                loan.paid_installments + int(amount / loan.installment_amount)
+            )
+        loan.last_paid = now().date()
+        loan.save()
+
+        messages.success(request, "Payment posted successfully")
+        return redirect("payment_history")
+
+    return render(request, "post_payment.html", {'clients': clients, 'loans': loans})
+
+
+
+
+
+def update_payment(request, payment_id):
+    payment = get_object_or_404(PaymentHistory, id=payment_id, loan__user=request.user)
+    clients = Client.objects.filter(user=request.user)
+    loans = Loan.objects.filter(user=request.user)
+
+    if request.method == "POST":
+        client_id = request.POST.get("client_id")
+        loan_id = request.POST.get("loan_id")
+        raw_amount = request.POST.get("amount", "0")
+
+        client = get_object_or_404(Client, id=client_id, user=request.user)
+        loan = get_object_or_404(Loan, id=loan_id, client=client, user=request.user)
+
+        try:
+            amount = Decimal(raw_amount)
+        except:
+            messages.error(request, "Invalid payment amount")
+            return redirect("update_payment", payment_id=payment.id)
+
+        if amount <= 0:
+            messages.error(request, "Payment must be greater than 0")
+            return redirect("update_payment", payment_id=payment.id)
+        if amount > loan.olb + payment.amount:  # allow editing previous amount
+            messages.error(request, "Payment exceeds outstanding balance")
+            return redirect("update_payment", payment_id=payment.id)
+
+        # Adjust previous loan paid amount
+        loan.paid -= payment.amount  # remove old payment
+        payment.amount = amount
+        payment.client = client
+        payment.loan = loan
+        payment.payment_date = now().date()
+        payment.recorded_by = request.user.username
+        payment.save()
+
+        # Recalculate loan paid
+        loan.paid += amount
+        if loan.installment_amount > 0:
+            loan.paid_installments = min(
+                loan.total_installments,
+                int(loan.paid / loan.installment_amount)
+            )
+        loan.last_paid = now().date()
+        loan.save()
+
+        messages.success(request, "Payment updated successfully")
+        return redirect("payment_history")
+
+    return render(request, "post_payment.html", {
+        "clients": clients,
+        "loans": loans,
+        "payment": payment
+    })
+
+
+
+
+def delete_payment(request, payment_id):
+    payment = get_object_or_404(PaymentHistory, id=payment_id, loan__user=request.user)
+    loan = payment.loan
+
+    # Reverse payment effect on loan
+    loan.paid -= payment.amount
+    if loan.installment_amount > 0:
+        loan.paid_installments = min(
+            loan.total_installments,
+            int(loan.paid / loan.installment_amount)
+        )
+    loan.save()
+
+    payment.delete()
+    messages.success(request, "Payment deleted successfully")
+    return redirect("payment_history")
+
+
+
+
+
+# PAYMENT HISTORY
+def payment_history(request):
+    payments = PaymentHistory.objects.filter(loan__user=request.user).order_by('-payment_date')
+    return render(request, "payment_history.html", {"payments": payments})

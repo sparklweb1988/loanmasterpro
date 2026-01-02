@@ -18,27 +18,26 @@
           <th>Start Date</th>
           <th>End Date</th>
           <th>Total Installments</th>
+          <th>Loan Amount</th>
           <th>Actions</th>
         </tr>
       </thead>
       <tbody>
         {% for loan in loans %}
         <tr>
-          <td>{{ loan.id }}</td>
-          <td>{{ loan.client.client_id }} - {{ loan.client.name }}</td>
+          <td>{{ loan.client.client_id }}</td>
+          <td>{{ loan.client.name }}</td>
           <td>{{ loan.product }}</td>
-          <td>{{ loan.principal }}</td>
+          <td>&#8358; {{ loan.principal }}</td>
           <td>{{ loan.interest_rate }}</td>
           <td>{{ loan.start_date }}</td>
           <td>{{ loan.end_date }}</td>
           <td>{{ loan.total_installments }}</td>
+          <td>&#8358; {{ loan.principal_interest }}</td>
           <td>
             <a href="{% url 'edit_loan' loan.id %}">Edit</a> |
-            <a
-              href="{% url 'delete_loan' loan.id %}"
-              onclick="return confirm('Are you sure you want to delete this loan?')"
-              >Delete</a
-            >
+            <a href="{% url 'delete_loan' loan.id %}"
+              onclick="return confirm('Are you sure you want to delete this loan?')">Delete</a>
           </td>
         </tr>
         {% empty %}
@@ -67,12 +66,8 @@
       <p><strong>Total Installments:</strong> {{ loan.total_installments }}</p>
       <div class="mobile-actions">
         <a href="{% url 'edit_loan' loan.id %}" class="action-btn edit">Edit</a>
-        <a
-          href="{% url 'delete_loan' loan.id %}"
-          class="action-btn delete"
-          onclick="return confirm('Are you sure you want to delete this loan?')"
-          >Delete</a
-        >
+        <a href="{% url 'delete_loan' loan.id %}" class="action-btn delete"
+          onclick="return confirm('Are you sure you want to delete this loan?')">Delete</a>
       </div>
     </div>
     {% empty %}

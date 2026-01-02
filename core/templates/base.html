@@ -4,7 +4,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Microfinance Bank ( Feed Collection)</title>
+    <title>LoanMasterPro</title>
     {% load static%}
     <link rel="stylesheet" href="{% static 'core/style.css'%}" />
 
@@ -30,6 +30,7 @@
         <li><a href="{% url 'officer_view'%}">Credit Officer</a></li>
         <li><a href="{% url 'client_list' %}">Client</a></li>
         <li><a href="{% url 'deposit_list' %}">Deposit</a></li>
+        <li><a href="{% url 'payment_history' %}">Payment</a></li>
         <li><a href="{% url 'loan_list' %}">Loan</a></li>
         <li><a href="{% url 'transaction' %}">Transaction</a></li>
         <li><a href="{% url 'contact' %}">Contact</a></li>

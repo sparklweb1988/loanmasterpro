@@ -63,7 +63,13 @@ urlpatterns = [
     
     path('payment/', views.payment, name='payment'),
     path('payment/verify/', views.verify_payment, name='verify_payment'),
- 
 
+
+    path('payment/history/', views.payment_history, name='payment_history'),
+    path('payment/manual/', views.post_payment, name='post_payment'),
+
+
+    path('payment/update/<int:payment_id>/', views.update_payment, name='update_payment'),
+    path('payment/delete/<int:payment_id>/', views.delete_payment, name='delete_payment'), 
 ]
    
