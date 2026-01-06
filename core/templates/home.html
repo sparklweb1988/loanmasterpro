@@ -1,0 +1,156 @@
+{% extends 'base.html'%} {% block content%} {% load static %}
+
+
+<!-- HERO SECTION -->
+<section class="hero">
+  <div class="hero-text">
+    <h1>Smart Loan Management <br> Made Simple</h1>
+    <h3>Automate loans, repayments & customer records</h3>
+    <p>
+      LoanMasterPro helps financial institutions, cooperatives and lenders
+      manage loans efficiently, reduce errors and improve repayment tracking
+      — all in one powerful system.
+    </p>
+    <a href="{% url 'signup'%}" class="btn-primary">Get Started</a>
+  </div>
+
+  <div class="hero-image">
+    <img src="{% static 'images/loan_dashboard.jfif'%}" alt="Loan Management Dashboard" />
+  </div>
+</section>
+
+
+<div class="container">
+  <!-- ABOUT SECTION -->
+  <section class="about">
+    <h2>Why LoanMasterPro?</h2>
+    <p>
+      LoanMasterPro is a modern loan management software built to simplify
+      loan disbursement, repayment tracking, overdue monitoring and reporting.
+      It gives lenders full control and visibility over customer loans.
+    </p>
+  </section>
+
+  <!-- SERVICES -->
+  <section class="services">
+    <h2>Our Core Services</h2>
+    <div class="service-cards">
+      <div class="card">
+        <h3>Client Management</h3>
+        <p>
+          Keep track of all your clients and their loan histories in one
+          place.
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>Loan Tracking</h3>
+        <p>
+          Monitor outstanding loans, repayments, and overdue balances easily.
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>Reports & Analytics</h3>
+        <p>
+          Generate professional reports, summaries and export data to Excel.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA BANNER -->
+  <section class="cta">
+    <h2>Ready to Take Control of Your Loan Business?</h2>
+    <p>Join lenders who trust LoanMasterPro to grow confidently.</p>
+    <a href="{% url 'signup'%}" class="btn-secondary">Sign Up Now!</a>
+  </section>
+
+  <!-- REVIEWS -->
+  <section class="reviews">
+    <h2>What Our Clients Say</h2>
+
+    <div class="review-slider">
+      <div class="review-card">
+        <p>
+          “LoanMasterPro transformed how we manage customer loans. Everything
+          is now automated and accurate.”
+        </p>
+        <h4>— Adewale T., Microfinance Manager</h4>
+      </div>
+
+      <div class="review-card">
+        <p>
+          “Tracking repayments and overdue loans is now effortless. Our
+          recovery rate improved significantly.”
+        </p>
+        <h4>— Blessing O., Cooperative Treasurer</h4>
+      </div>
+
+      <div class="review-card">
+        <p>“The reporting feature saves us hours of work every month.”</p>
+        <h4>— Samuel K., Loan Officer</h4>
+      </div>
+    </div>
+  </section>
+
+
+
+
+  <!-- PRICING -->
+  <section class="pricing" id="pricing">
+    <h2>Simple Pricing</h2>
+
+    <div class="pricing-cards">
+      <!-- Starter Card -->
+      <div class="price-card" id="starter-card">
+        <h3>Starter</h3>
+        <h1>₦5,000</h1>
+        <p>1 - 50 Borrowers</p>
+
+        <br>
+        <a href="{% url 'signup'%}" class="btn-secondary"> Pay Now</a>
+        </form>
+      </div>
+
+      <!-- Professional Card -->
+      <div class="price-card" id="professional-card">
+        <h3>Professional</h3>
+        <h1>₦10,000</h1>
+        <p>51 - 200 Borrowers</p>
+
+        <br>
+        <a href="{% url 'signup'%}" class="btn-secondary">Pay Now</a>
+        </form>
+      </div>
+
+      <!-- Business Card -->
+      <div class="price-card" id="business-card">
+        <h3>Business</h3>
+        <h1>₦25,000</h1>
+        <p>201 - 100,000 Borrowers</p>
+
+        <br>
+        <a href="{% url 'signup'%}" class="btn-secondary"> Pay Now</a>
+        </form>
+      </div>
+    </div>
+  </section>
+
+
+
+
+  <section class="contact">
+    <h1>Contact Us</h1>
+
+    <form class="contact-form">
+      <input type="text" placeholder="Your Name" required>
+      <input type="email" placeholder="Your Email" required>
+      <textarea placeholder="Your Message" rows="5" required></textarea>
+      <button type="submit">Send Message</button>
+    </form>
+  </section>
+
+
+</div>
+{% endblock content%}

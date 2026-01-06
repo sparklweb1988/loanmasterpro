@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LoanMasterPro</title>
+    {% load static%}
+    <link rel="stylesheet" href="{% static 'core/style.css'%}" />
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.min.js"
+      integrity="sha512-n/G+dROKbKL3GVngGWmWfwK0yPctjZQM752diVYnXZtD/48agpUKLIn0xDQL9ydZ91x6BiOmTIFwWjjFi2kEFg=="
+      crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  </head>
+
+  <body>
+    <nav>
+      <a href="{% url 'home' %}" class="logo">LoanMaster <br />
+        Pro</a>
+      <div class="hamburger" id="hamburger">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+      <ul id="nav-menu">
+        {% if user.is_authenticated %}
+        <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+        <li><a href="{% url 'branch_view'%}">Branch</a></li>
+        <li><a href="{% url 'center_view'%}">Center</a></li>
+        <li><a href="{% url 'officer_view'%}">Credit Officer</a></li>
+        <li><a href="{% url 'client_list' %}">Client</a></li>
+        <li><a href="{% url 'deposit_list' %}">Deposit</a></li>
+        <li><a href="{% url 'loan_list' %}">Loan</a></li>
+        <li><a href="{% url 'payment_history' %}">Payment</a></li>
+        <li><a href="{% url 'transaction' %}">Transaction</a></li>
+        <li><a href="{% url 'contact' %}">Contact</a></li>
+        <li><a href="{% url 'logout'%}">Logout</a></li>
+        {% else %}
+
+        <li><a href="{% url 'home' %}">Home</a></li>
+        <li><a href="{% url 'contact' %}">Contact</a></li>
+        <li><a href="{% url 'signup'%}">Register</a></li>
+        <li><a href="{% url 'signin'%}">Signin</a></li>
+        {% endif %}
+      </ul>
+    </nav>
+
+    {% block content%} {% endblock content%}
+    <footer>
+      <p>© <span id="year"></span> LoanMasterPro. All Rights Reserved.</p>
+    </footer>
+
+
+    <script>
+      const hamburger = document.getElementById("hamburger");
+      const navMenu = document.getElementById("nav-menu");
+
+      hamburger.addEventListener("click", () => {
+        navMenu.classList.toggle("active");
+      });
+      document.getElementById("year").textContent = new Date().getFullYear();
+    </script>
+    <!-- payment  -->
+
+  </body>
+
+</html>

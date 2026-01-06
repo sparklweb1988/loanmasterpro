@@ -1,0 +1,187 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container">
+
+
+
+
+  <div class="container">
+    <h2>Filter Report</h2>
+    <form method="get" action="{% url 'transaction' %}">
+
+      <div class="form-group">
+        <label>Branch</label>
+        <select name="branch">
+          <option value="">All</option>
+          {% for b in branches %}
+          <option value="{{ b.id }}" {% if request.GET.branch == b.id|stringformat:"s" %}selected{% endif %}>
+            {{ b.name }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Center</label>
+        <select name="center">
+          <option value="">All</option>
+          {% for c in centers %}
+          <option value="{{ c.id }}" {% if request.GET.center == c.id|stringformat:"s" %}selected{% endif %}>
+            {{ c.name }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Credit Officer</label>
+        <select name="officer">
+          <option value="">All</option>
+          {% for o in officers %}
+          <option value="{{ o.id }}" {% if request.GET.officer == o.id|stringformat:"s" %}selected{% endif %}>
+            {{ o.name }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group">
+        <button type="submit">Filter</button>
+        <br>
+        <a href="{% url 'transaction' %}">Reset</a>
+      </div>
+
+    </form>
+
+  </div>
+  <!-- TABLE VIEW -->
+
+  <h2>Transaction Report</h2>
+
+
+  <!-- Desktop Table View -->
+  <div class="desktop-view">
+    <table>
+      <thead>
+        <tr>
+          <th>ATTN</th>
+          <th>Client ID</th>
+          <th>Name</th>
+          <!-- <th>DEPPROD1</th>
+          <th>Collected</th>
+          <th>Balance</th>
+          <th>Expected</th>
+          <th>DEPPROD2</th>
+          <th>Collected</th>
+          <th>Balance</th>
+          <th>Expected</th> -->
+          <th>Total Deposit</th>
+          <th>Loan Prod</th>
+          <th>Principal</th>
+          <!-- <th>Interest %</th>
+          <th>Interest</th> -->
+          <th>Loan AMT</th>
+          <th>OLB</th>
+          <!-- <th>Start Date</th>
+          <th>End Date</th> -->
+          <th>Total Inst.</th>
+          <th>Paid Inst.</th>
+          <th>Unpaid Inst.</th>
+          <th>Inst. Amount</th>
+          <th>Last Paid</th>
+          <th>Overdue</th>
+          <th>Payment</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for data in report_data %}
+        <tr>
+          <td>{{ data.client.credit_officer.name }}</td>
+          <td>{{ data.client.client_id }}</td>
+          <td>{{ data.client.name }}</td>
+
+          <!-- Deposits -->
+          <!-- <td>REGSAVG</td>
+          <td>{{ data.reg_collected }}</td>
+          <td>{{ data.reg_balance }}</td>
+          <td>{{ data.reg_expected }}</td>
+
+          <td>VOLSAVG</td>
+          <td>{{ data.vol_collected }}</td>
+          <td>{{ data.vol_balance }}</td>
+          <td>{{ data.vol_expected }}</td> -->
+
+          <td>{{ data.total_deposit }}</td>
+
+          <!-- Loan -->
+          <td>{{ data.loan.product }}</td>
+          <td>&#8358; {{ data.loan.principal }}</td>
+          <!-- <td>{{ data.loan.interest_rate }}</td>
+          <td>{{ data.loan.interest_amount }}</td> -->
+          <td>&#8358; {{ data.loan.principal_interest }}</td>
+          <td>&#8358; {{ data.loan.olb }}</td>
+          <!-- <td>{{ data.loan.start_date }}</td>
+          <td>{{ data.loan.end_date }}</td> -->
+
+          <td>{{ data.loan.total_installments }}</td>
+          <td>{{ data.loan.paid_installments }}</td>
+          <td>{{ data.loan.unpaid_installments }}</td>
+          <td>&#8358; {{ data.loan.installment_amount }}</td>
+
+          <td>&#8358; {{ data.loan.last_paid }}</td>
+          <td>&#8358; {{ data.loan.overdue }}</td>
+          <td>&#8358; {{ data.loan.paid }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="27">No data available.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Mobile Card View -->
+  <div class="mobile-view">
+    {% for data in report_data %}
+    <div class="mobile-card">
+      <h3>Client: {{ data.client.name }} ({{ data.client.client_id }})</h3>
+      <p><strong>ATTN (Credit Officer):</strong> {{ data.client.credit_officer.name }}</p>
+
+      <p><strong>Deposits:</strong>
+        REGSAVG - Collected: {{ data.reg_collected }}, Balance: {{ data.reg_balance }}, Expected:
+        {{ data.reg_expected }} |
+        VOLSAVG - Collected: {{ data.vol_collected }}, Balance: {{ data.vol_balance }}, Expected:
+        {{ data.vol_expected }}
+      </p>
+      <p><strong>Total Deposit:</strong> {{ data.total_deposit }}</p>
+
+      <p><strong>Loan Product:</strong> {{ data.loan.product }}</p>
+      <p><strong>Principal:</strong> {{ data.loan.principal }}</p>
+      <p><strong>Interest %:</strong> {{ data.loan.interest_rate }}</p>
+      <p><strong>Interest:</strong> {{ data.loan.interest_amount }}</p>
+      <p><strong>Loan AMT (P+I):</strong> {{ data.loan.principal_interest }}</p>
+      <p><strong>OLB:</strong> {{ data.loan.olb }}</p>
+      <p><strong>Start Date:</strong> {{ data.loan.start_date }}</p>
+      <p><strong>End Date:</strong> {{ data.loan.end_date }}</p>
+
+      <p><strong>Total Inst.:</strong> {{ data.loan.total_installments }}</p>
+      <p><strong>Paid Inst.:</strong> {{ data.loan.paid_installments }}</p>
+      <p><strong>Unpaid Inst.:</strong> {{ data.loan.unpaid_installments }}</p>
+      <p><strong>Inst. Amount:</strong> {{ data.loan.installment_amount }}</p>
+
+      <p><strong>Last Paid:</strong> {{ data.loan.last_paid }}</p>
+      <p><strong>Overdue:</strong> {{ data.loan.overdue }}</p>
+      <p><strong>Payment:</strong> {{ data.loan.paid }}</p>
+    </div>
+    {% empty %}
+    <p>No data available.</p>
+    {% endfor %}
+  </div>
+
+  <br />
+  <a href="{% url 'export_excel' %}?{{ request.GET.urlencode }}">
+    Generate Report
+  </a>
+</div>
+{% endblock %}

@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <h2>Payment List</h2>
+    <br />
+    <a href="{% url 'post_payment' %}">Add Payment</a>
+    <br /><br />
+    {% if messages %}
+    {% for message in messages %}
+    <p>{{ message }}</p>
+    {% endfor %}
+    {% endif %}
+
+    <!-- Desktop Table View -->
+    <div class="desktop-view">
+        <table>
+            <thead>
+                <tr>
+                    <th>Payment Date</th>
+                    <th>Client</th>
+                    <th>Loan Product</th>
+                    <th>Amount Paid</th>
+                    <th>Recorded By</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for payment in payments %}
+                <tr>
+                    <td>{{ payment.payment_date }}</td>
+                    <td>{{ payment.client.name }}</td>
+                    <td>{{ payment.loan.product }}</td>
+                    <td>₦ {{ payment.amount }}</td>
+                    <td>{{ payment.recorded_by }}</td>
+                    <td>
+                        <a href="{% url 'update_payment' payment.id %}">Edit</a>
+                        <a href="{% url 'delete_payment' payment.id %}">Delete</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" style="text-align:center;">No payment records found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Mobile Card View -->
+    <div class="mobile-view">
+        {% for payment in payments %}
+        <div class="mobile-card">
+            <p><strong>Payment Date:</strong> {{ payment.payment_date }}</p>
+            <p><strong>Client:</strong> {{ payment.client.name }}</p>
+            <p><strong>Loan Product:</strong> {{ payment.loan.product }}</p>
+            <p><strong>Outstanding Balance:</strong> ₦{{ payment.loan.olb }}</p>
+            <p><strong>Installment Amount:</strong> ₦{{ payment.loan.installment_amount }}</p>
+            <p><strong>Last Paid:</strong> {{ payment.loan.last_paid|default:"N/A" }}</p>
+            <div class="mobile-actions">
+                <a href="{% url 'update_payment' payment.id %}">Edit</a>
+                <a href="{% url 'delete_payment' payment.id %}">Delete</a>
+
+            </div>
+        </div>
+        {% empty %}
+        <p>No payment records found.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

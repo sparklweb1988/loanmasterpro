@@ -1,0 +1,89 @@
+{% extends 'base.html' %} {% block content %}
+
+<div class="container">
+  <br />
+  <br />
+  <h1>Welcome: ({{ user.username }}) to your Dashboard</h1>
+  <br><br>
+  {% if messages %}
+  {% for message in messages %}
+  <p>{{ message }}</p>
+  {% endfor %}
+  {% endif %}
+  <div class="card">
+    <h2>Your Subscription</h2>
+    <p><strong>Current Plan:</strong> {{ profile.plan|title }}</p>
+    <p><strong>Valid Until:</strong>
+      {% if profile.paid_until %}
+      {{ profile.paid_until|date:"D, d M Y" }}
+      {% else %}
+      Not Active
+      {% endif %}
+    </p>
+
+    <h3>Upgrade Plan</h3>
+    <div class="upgrade-buttons">
+      {% for plan in plans %}
+      {% if plan.name|lower != profile.plan|lower %}
+      <a href="{{ plan.pay_url }}" class="btn-secondary">Upgrade to {{ plan.name }}</a>
+      {% else %}
+      <span>Current Plan</span>
+      {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+
+
+
+
+  <br />
+  <!-- Flex layout for cards and chart -->
+  <div class="card-container">
+    <div class="card">
+      <h2>Total Clients</h2>
+      <p>{{ total_clients }}</p>
+    </div>
+    <div class="card">
+      <h2>Total Deposits</h2>
+      <p>{{ total_deposit }}</p>
+    </div>
+    <div class="card">
+      <h2>Total Loans</h2>
+      <p>{{ total_loan }}</p>
+    </div>
+  </div>
+
+  <!-- Flex container for chart -->
+  <div class="chart-container">
+    <canvas id="myChart"></canvas>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    const ctx = document.getElementById('myChart');
+
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: ['Clients', 'Deposits', 'Loans'],  // Dynamic Labels
+        datasets: [{
+          label: 'Total Counts',
+          data: [{{ total_clients }}, {{ total_deposit }}, {{ total_loan }}],  // Dynamic data
+      backgroundColor: ['#3498db', '#e67e22', '#2ecc71'],  // Different colors
+      borderColor: ['#2980b9', '#d35400', '#27ae60'],  // Border color
+      borderWidth: 1
+              }]
+          },
+      options: {
+      scales: {
+        y: {
+          beginAtZero: true
+        }
+      }
+    }
+      });
+  </script>
+</div>
+
+{% endblock content %}
+</div>

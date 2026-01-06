@@ -1,0 +1,12 @@
+{% extends 'base.html' %} {% block content %}
+<div class="container">
+  <h2>Are you sure you want to delete this deposit?</h2>
+  <form method="POST" action="{% url 'delete_deposit' deposit.id %}">
+    {% csrf_token %}
+    <button type="submit">Yes, delete</button>
+
+    <br />
+    <a href="{% url 'deposit_list' %}">Cancel</a>
+  </form>
+</div>
+{% endblock %}

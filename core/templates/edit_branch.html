@@ -1,0 +1,25 @@
+{% extends 'base.html' %} {% block content %}
+<div class="container">
+  <br />
+  <h2>Edit Branch</h2>
+  <form method="POST" action="{% url 'edit_branch_view' branch.id %}">
+    {% csrf_token %}
+    <div class="form-group">
+      <label for="name">Branch Name</label>
+      <input
+        type="text"
+        name="name"
+        id="name"
+        value="{{ branch.name }}"
+        required
+      />
+    </div>
+    <br />
+    <div class="form-group">
+      <button type="submit">Save Changes</button>
+      <br /><br />
+      <a href="{% url 'branch_view' %}">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

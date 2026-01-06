@@ -1,0 +1,78 @@
+{% extends 'base.html' %} {% block content %}
+<div class="container">
+  <br />
+  <h2>Credit Officer</h2>
+  <form method="POST" action="{% url 'officer_view' %}">
+    {% csrf_token %}
+
+    <div class="form-group">
+      <label for="name">Name</label>
+      <input type="text" name="name" id="name" />
+    </div>
+
+    <div class="form-group">
+      <label for="branch">Branch</label>
+      <select name="branch" id="branch">
+        <option value="">Select Branch</option>
+        {% for branch in branches %}
+        <option value="{{branch.id}}">{{branch.name}}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <br />
+    <div class="form-group">
+      <button type="submit">Submit</button>
+      <br /><br />
+      <a href="{% url 'dashboard' %}">Cancel</a>
+    </div>
+  </form>
+
+  <!-- Desktop Table View -->
+  <div class="desktop-view">
+    <table>
+      <thead>
+        <tr>
+          <th>Credit Officer</th>
+          <th>Branch</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for offic in officers %}
+        <tr>
+          <td>{{offic.name}}</td>
+          <td>{{offic.branch.name}}</td>
+
+          <td>
+            <a href="{% url 'edit_officer_view' offic.id %}">Edit</a> |
+            <a href="{% url 'delete_officer_view' offic.id %}">Delete</a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5">No Officer found</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Mobile Card View -->
+  <div class="mobile-view">
+    {% for offic in officers %}
+    <div class="mobile-card">
+      <h3>{{offic.name}}</h3>
+      <p><strong>Client ID:</strong> {{ client.client_id }}</p>
+      <p><strong>Branch:</strong> {{offic.branch.name}}</p>
+      <div class="mobile-actions">
+        <a href="{% url 'edit_officer_view' offic.id %}">Edit</a>
+        <a href="{% url 'delete_officer_view' offic.id %}">Delete</a>
+      </div>
+    </div>
+    {% empty %}
+    <p>No Officer found.</p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

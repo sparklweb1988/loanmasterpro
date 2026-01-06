@@ -1,0 +1,62 @@
+{% extends 'base.html' %} {% block content %}
+<div class="container">
+  <h2>Deposits List</h2>
+  <br />
+  <a href="{% url 'create_deposit' %}">Deposit New</a>
+  <br />
+  <br />
+
+  <!-- Desktop Table View -->
+  <div class="desktop-view">
+    <table>
+      <thead>
+        <tr>
+          <th>Client Name</th>
+          <th>Loan Product</th>
+          <th>Expected Amount</th>
+          <th>Collected Amount</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for deposit in deposits %}
+        <tr>
+          <td>{{ deposit.client.name }}</td>
+          <td>{{ deposit.product }}</td>
+          <td>&#8358; {{ deposit.expected }}</td>
+          <td>&#8358; {{ deposit.collected }}</td>
+          <td>
+            <a href="{% url 'edit_deposit' deposit.id %}">Edit</a> |
+            <a href="{% url 'delete_deposit' deposit.id %}"
+              onclick="return confirm('Are you sure you want to delete this deposit?')">Delete</a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5">No deposits found.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Mobile Card View -->
+  <div class="mobile-view">
+    {% for deposit in deposits %}
+    <div class="mobile-card">
+      <h3>{{ deposit.client.name }}</h3>
+      <p><strong>Loan Product:</strong> {{ deposit.product }}</p>
+      <p><strong>Expected Amount:</strong> {{ deposit.expected }}</p>
+      <p><strong>Collected Amount:</strong> {{ deposit.collected }}</p>
+      <div class="mobile-actions">
+        <a href="{% url 'edit_deposit' deposit.id %}" class="action-btn edit">Edit</a>
+        <a href="{% url 'delete_deposit' deposit.id %}" class="action-btn delete"
+          onclick="return confirm('Are you sure you want to delete this deposit?')">Delete</a>
+      </div>
+    </div>
+    {% empty %}
+    <p>No deposits found.</p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

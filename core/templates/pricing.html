@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block content %}
+<div class="container">
+    <br />
+    <section class="pricing" id="pricing">
+        <h2>Simple Pricing</h2>
+
+        <div class="pricing-cards">
+            {% for plan in plans %}
+            <div class="price-card" id="{{ plan.name|lower }}-card">
+                <h3>{{ plan.name }}</h3>
+                <h1>₦{{ plan.price|intcomma }}</h1>
+                <p>{{ plan.desc }}</p>
+
+                <br>
+                <a href="{{ plan.pay_url }}" class="btn-secondary">Pay Now</a>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+
+</div>
+{% endblock %}
