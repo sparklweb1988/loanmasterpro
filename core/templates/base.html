@@ -14,9 +14,9 @@
   </head>
 
   <body>
+    {% if not hide_navbar %}
     <nav>
-      <a href="{% url 'home' %}" class="logo">LoanMaster <br />
-        Pro</a>
+      <a href="{% url 'home' %}" class="logo">LoanMaster <br /> Pro</a>
       <div class="hamburger" id="hamburger">
         <span></span>
         <span></span>
@@ -36,7 +36,6 @@
         <li><a href="{% url 'contact' %}">Contact</a></li>
         <li><a href="{% url 'logout'%}">Logout</a></li>
         {% else %}
-
         <li><a href="{% url 'home' %}">Home</a></li>
         <li><a href="{% url 'contact' %}">Contact</a></li>
         <li><a href="{% url 'signup'%}">Register</a></li>
@@ -44,6 +43,9 @@
         {% endif %}
       </ul>
     </nav>
+    {% endif %}
+
+
 
     {% block content%} {% endblock content%}
     <footer>

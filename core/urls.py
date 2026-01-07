@@ -18,7 +18,7 @@ urlpatterns = [
     path('create-deposit/', views.create_deposit, name='create_deposit'),
     path('create-loan/', views.create_loan, name='create_loan'), 
     
-    # path('create-loan/', views.create_loan, name='create_loan'),
+   
     path('edit-loan/<int:loan_id>/', views.edit_loan, name='edit_loan'),
     path('delete-loan/<int:loan_id>/', views.delete_loan, name='delete_loan'),
     
@@ -28,7 +28,7 @@ urlpatterns = [
     
     
     
-    # path('create-client/', views.create_client, name='create_client'),
+
     path('edit-client/<int:client_id>/', views.edit_client, name='edit_client'),
     path('delete-client/<int:client_id>/', views.delete_client, name='delete_client'),
     
@@ -59,9 +59,8 @@ urlpatterns = [
     #  PAYSTACK PAYMENT
     
     path("pricing/", views.pricing_view, name="pricing"),
-    # path("pay/", views.pay_view, name="pay"),  # no slug now
-    # path("payment-success/", views.payment_success, name="payment_success"),
-
+    path('upgrade-plan/<str:plan_name>/', views.upgrade_plan, name='upgrade_plan'),
+    path('payment-success/<str:plan_name>/', views.payment_success, name='payment_success'),
 
 # LOAN PAYMENT
     path('payment/history/', views.payment_history, name='payment_history'),

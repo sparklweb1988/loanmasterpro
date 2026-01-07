@@ -1,43 +1,58 @@
-{% extends 'base.html' %} {% block content %}
+{% extends 'base.html' %}
+{% block content %}
 
 <div class="container">
-  <br />
-  <br />
+  <br><br>
   <h1>Welcome: ({{ user.username }}) to your Dashboard</h1>
   <br><br>
+
   {% if messages %}
   {% for message in messages %}
   <p>{{ message }}</p>
   {% endfor %}
   {% endif %}
+
   <div class="card">
-    <h2>Your Subscription</h2>
+    <!-- Plan Status -->
     <p><strong>Current Plan:</strong> {{ profile.plan|title }}</p>
+
+    <p><strong>Plan Status:</strong>
+      {% if profile.is_active %}
+      Active
+      {% else %}
+      Not Active
+      {% endif %}
+    </p>
+
     <p><strong>Valid Until:</strong>
-      {% if profile.paid_until %}
+      {% if profile.is_active %}
       {{ profile.paid_until|date:"D, d M Y" }}
       {% else %}
       Not Active
       {% endif %}
     </p>
 
+    <!-- Upgrade Plan -->
+    {% if not profile.is_active %}
     <h3>Upgrade Plan</h3>
     <div class="upgrade-buttons">
       {% for plan in plans %}
       {% if plan.name|lower != profile.plan|lower %}
-      <a href="{{ plan.pay_url }}" class="btn-secondary">Upgrade to {{ plan.name }}</a>
-      {% else %}
-      <span>Current Plan</span>
+      <a href="{{ plan.pay_url }}" class="btn-secondary" target="_blank">
+        Pay & Upgrade to {{ plan.name }} <br>
+      </a>
+      <br>
       {% endif %}
       {% endfor %}
     </div>
+    {% else %}
+    <p>You already have an active plan. Upgrade is not available until current plan expires.</p>
+    {% endif %}
   </div>
 
-
-
-
   <br />
-  <!-- Flex layout for cards and chart -->
+
+  <!-- Flex layout for cards -->
   <div class="card-container">
     <div class="card">
       <h2>Total Clients</h2>
@@ -53,7 +68,7 @@
     </div>
   </div>
 
-  <!-- Flex container for chart -->
+  <!-- Chart -->
   <div class="chart-container">
     <canvas id="myChart"></canvas>
   </div>
@@ -65,25 +80,22 @@
     new Chart(ctx, {
       type: 'bar',
       data: {
-        labels: ['Clients', 'Deposits', 'Loans'],  // Dynamic Labels
+        labels: ['Clients', 'Deposits', 'Loans'],
         datasets: [{
           label: 'Total Counts',
-          data: [{{ total_clients }}, {{ total_deposit }}, {{ total_loan }}],  // Dynamic data
-      backgroundColor: ['#3498db', '#e67e22', '#2ecc71'],  // Different colors
-      borderColor: ['#2980b9', '#d35400', '#27ae60'],  // Border color
+          data: [{{ total_clients }}, {{ total_deposit }}, {{ total_loan }}],
+      backgroundColor: ['#3498db', '#e67e22', '#2ecc71'],
+      borderColor: ['#2980b9', '#d35400', '#27ae60'],
       borderWidth: 1
-              }]
-          },
+        }]
+      },
       options: {
       scales: {
-        y: {
-          beginAtZero: true
-        }
+        y: { beginAtZero: true }
       }
     }
-      });
+    });
   </script>
 </div>
 
 {% endblock content %}
-</div>

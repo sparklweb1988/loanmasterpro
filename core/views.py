@@ -27,6 +27,8 @@ from django.db.models.signals import post_save
 
 
 
+
+
 def home(request):
     return render(request,'home.html')
 
@@ -69,7 +71,7 @@ def signup_view(request):
         if user is not None:
             login(request, user)
             messages.success(request, ' You have signup successfully')
-            return redirect('pay')
+            return redirect('pricing')
     return render(request, 'signup.html')
 
 
@@ -92,7 +94,7 @@ def signin_view(request):
             profile, _ = Profile.objects.get_or_create(user=user)
 
             # Redirect based on subscription
-            if profile.is_active():
+            if profile.is_active:
                 return redirect('dashboard')
             else:
                 return redirect('pricing')
@@ -110,40 +112,122 @@ def contact_view(request):
 
 
 
-# def pricing_view(request):
-#     return render(request, 'pricing.html')
-
-
-
-
-
-
-
 
 
 
 @login_required
 def pricing_view(request):
+    profile = request.user.profile
+
+    # Redirect paid users to dashboard
+    if profile.is_active:
+        return redirect("dashboard")
+
     plans = [
-    {"name": "Starter", "price": 5000, "pay_url": "https://paystack.shop/pay/gzu54tykc6"},
-    {"name": "Professional", "price": 10000, "pay_url": "https://paystack.shop/pay/b2hi35ebej"},
-    {"name": "Business", "price": 25000, "pay_url": "https://paystack.shop/pay/058chi19tu"},
-]
-    return render(request, "pricing.html", {"plans": plans})
+        {"name": "Starter", "price": 5000, "pay_url": "https://paystack.shop/pay/gzu54tykc6"},
+        {"name": "Professional", "price": 10000, "pay_url": "https://paystack.shop/pay/b2hi35ebej"},
+        {"name": "Business", "price": 25000, "pay_url": "https://paystack.shop/pay/058chi19tu"},
+    ]
+
+    return render(request, "pricing.html", {"plans": plans, "hide_navbar": True})
+
+
+
+
+
+
+# Define plan durations (in days) and optional prices
+PLAN_DURATION_DAYS = {
+    'starter': 30,
+    'professional': 30,  # adjust as needed
+    'business': 30
+}
+
+@login_required
+def upgrade_plan(request, plan_name):
+    profile = get_object_or_404(Profile, user=request.user)
+
+    plan_name = plan_name.lower()
+    if plan_name not in PLAN_DURATION_DAYS:
+        messages.error(request, "Invalid plan selected.")
+        return redirect("dashboard")
+
+    # If user is already on this plan
+    if profile.plan.lower() == plan_name and profile.is_active():
+        messages.info(request, f"You are already on the {plan_name.title()} plan.")
+        return redirect("dashboard")
+
+    # Calculate new expiration date
+    now = timezone.now()
+    # If current plan is active, extend from paid_until
+    if profile.paid_until and profile.paid_until > now:
+        new_paid_until = profile.paid_until + timedelta(days=PLAN_DURATION_DAYS[plan_name])
+    else:
+        new_paid_until = now + timedelta(days=PLAN_DURATION_DAYS[plan_name])
+
+    # Update profile
+    profile.plan = plan_name
+    profile.is_paid = True
+    profile.paid_until = new_paid_until
+    profile.save()
+
+    messages.success(request, f"Successfully upgraded to {plan_name.title()} plan. Valid until {new_paid_until.strftime('%d %b %Y')}.")
+    return redirect("dashboard")
+
+
+
+
+# Plan durations in days
+PLAN_DURATION_DAYS = {
+    'starter': 30,
+    'professional': 30,
+    'business': 30
+}
+
+@login_required
+def payment_success(request, plan_name):
+    """
+    Called after successful payment
+    Updates user's profile plan and paid_until
+    """
+    profile = get_object_or_404(Profile, user=request.user)
+    plan_name = plan_name.lower()
+
+    if plan_name not in PLAN_DURATION_DAYS:
+        messages.error(request, "Invalid plan.")
+        return redirect("dashboard")
+
+    now = timezone.now()
+    duration_days = PLAN_DURATION_DAYS[plan_name]
+
+    # If the current plan is still active, extend it
+    if profile.paid_until and profile.paid_until > now:
+        new_paid_until = profile.paid_until + timedelta(days=duration_days)
+    else:
+        new_paid_until = now + timedelta(days=duration_days)
+
+    profile.plan = plan_name
+    profile.is_paid = True
+    profile.paid_until = new_paid_until
+    profile.save()
+
+    messages.success(request, f"Payment successful! You are now on the {plan_name.title()} plan until {new_paid_until.strftime('%d %b %Y')}.")
+    return redirect("dashboard")
+
+
+
 
 
 
 
 @login_required
 def pay_view(request, plan_slug):
-    # Here you would normally redirect to Paystack payment page for the selected plan
-    # For demo, we simulate payment success
+   
     profile = request.user.profile
 
-    # Update plan and subscription
     profile.plan = plan_slug
     profile.is_paid = True
-    profile.paid_until = timezone.now() + timedelta(days=30)  # 1 month subscription
+    profile.paid_until = timezone.now() + timedelta(days=30)  
     profile.save()
 
     messages.success(request, f"Payment successful! You are now on the {plan_slug.title()} plan.")
@@ -155,22 +239,50 @@ def pay_view(request, plan_slug):
 @login_required
 def officer_view(request):
     if request.user.is_staff:
-        officers = CreditOfficer.objects.all()  # Admin can see all officers
+        officers = CreditOfficer.objects.all()
         branches = Branch.objects.all()
     else:
-        officers = CreditOfficer.objects.filter(user=request.user)  # Only officers associated with the user
-        branches = Branch.objects.filter(user =request.user)
+        officers = CreditOfficer.objects.filter(user=request.user)
+        branches = Branch.objects.filter(user=request.user)
 
     if request.method == 'POST':
         name = request.POST.get('name')
         branch_id = request.POST.get('branch')
-        
-        branch = Branch.objects.get(id=branch_id)
-        
-        officer = CreditOfficer.objects.create(name=name, branch=branch)
-        return redirect('officer_view')
 
-    return render(request, 'credit_officer.html', {'branches': branches, 'officers': officers})
+        if not branch_id:
+            return render(request, 'credit_officer.html', {
+                'branches': branches,
+                'officers': officers,
+                'error': 'Please select a branch.'
+            })
+
+        try:
+            if request.user.is_staff:
+                branch = Branch.objects.get(id=branch_id)
+            else:
+                branch = Branch.objects.get(id=branch_id, user=request.user)
+
+            CreditOfficer.objects.create(
+                name=name,
+                branch=branch,
+                user=request.user
+            )
+
+            return redirect('officer_view')
+
+        except Branch.DoesNotExist:
+            return render(request, 'credit_officer.html', {
+                'branches': branches,
+                'officers': officers,
+                'error': 'Invalid branch selected.'
+            })
+
+    return render(request, 'credit_officer.html', {
+        'branches': branches,
+        'officers': officers
+    })
+
+
 
 
 
@@ -195,11 +307,16 @@ def edit_officer_view(request, officer_id):
     return render(request, 'edit_officer.html', {'officer': officer, 'branches': branches})
 
 
+
+
 @login_required
 def delete_officer_view(request,id):
     officers = get_object_or_404(CreditOfficer, pk=id)
     officers.delete()
     return redirect('officer_view')
+
+
+
 
 
 @login_required
@@ -210,25 +327,45 @@ def center_view(request):
     else:
         centers = Center.objects.filter(user=request.user)
         branches = Branch.objects.filter(user=request.user)
-    
+
     if request.method == 'POST':
         name = request.POST.get('name')
         branch_id = request.POST.get('branch')
-        
-        # Check if the branch_id is not empty
-        if branch_id:
-            try:
+
+        if not branch_id:
+            return render(request, 'center.html', {
+                'branches': branches,
+                'centers': centers,
+                'error': 'Please select a branch.'
+            })
+
+        try:
+            if request.user.is_staff:
                 branch = Branch.objects.get(id=branch_id)
-                center = Center.objects.create(name=name, branch=branch)
-                return redirect('center_view')
-            except Branch.DoesNotExist:
-                # Handle the case where the branch does not exist
-                return render(request, 'center.html', {'branches': branches, 'centers': centers, 'error': 'Invalid branch selected.'})
-        else:
-            # Handle the case where branch_id is empty
-            return render(request, 'center.html', {'branches': branches, 'centers': centers, 'error': 'Please select a branch.'})
-    
-    return render(request, 'center.html', {'branches': branches, 'centers': centers})
+            else:
+                branch = Branch.objects.get(id=branch_id, user=request.user)
+
+            Center.objects.create(
+                name=name,
+                branch=branch,
+                user=request.user
+            )
+
+            return redirect('center_view')
+
+        except Branch.DoesNotExist:
+            return render(request, 'center.html', {
+                'branches': branches,
+                'centers': centers,
+                'error': 'Invalid branch selected.'
+            })
+
+    return render(request, 'center.html', {
+        'branches': branches,
+        'centers': centers
+    })
+
+
 
 
 
@@ -264,18 +401,23 @@ def delete_center_view(request, id):
 
 @login_required
 def branch_view(request):
-    if request.method =='POST':
+    if request.method == 'POST':
         name = request.POST.get('name')
-        branch = Branch.objects.create(name=name)
+        Branch.objects.create(
+            name=name,
+            user=request.user
+        )
         return redirect('branch_view')
-    
+
     if request.user.is_staff:
         branches = Branch.objects.all()
-        
     else:
-        
         branches = Branch.objects.filter(user=request.user)
-    return render(request,'branch.html',{'branches':branches})
+
+    return render(request, 'branch.html', {'branches': branches})
+
+
+
 
 
 @login_required
@@ -312,23 +454,19 @@ def logout_view(request):
 def dashboard(request):
     profile = request.user.profile  # current user profile
 
-    # Fetch data for cards
     if request.user.is_staff:
         clients = Client.objects.all()
         deposits = Deposit.objects.all()
         loans = Loan.objects.all()
-        total_clients = clients.count()
-        total_deposit = deposits.count()
-        total_loan = loans.count()
     else:
         clients = Client.objects.filter(user=request.user)
-        deposits = Deposit.objects.filter(user=request.user)
-        loans = Loan.objects.filter(user=request.user)
-        total_clients = clients.count()
-        total_deposit = deposits.count()
-        total_loan = loans.count()
+        deposits = Deposit.objects.filter(client__user=request.user)  # adjust if needed
+        loans = Loan.objects.filter(client__user=request.user)        # FIXED
 
-    # Define all plans with direct Paystack URLs
+    total_clients = clients.count()
+    total_deposit = deposits.count()
+    total_loan = loans.count()
+
     plans = [
         {"name": "Starter", "pay_url": "https://paystack.shop/pay/gzu54tykc6"},
         {"name": "Professional", "pay_url": "https://paystack.shop/pay/b2hi35ebej"},
@@ -340,10 +478,9 @@ def dashboard(request):
         'total_deposit': total_deposit,
         'total_loan': total_loan,
         'profile': profile,
-        'plans': plans,  # pass plans for upgrade buttons
+        'plans': plans, 
     }
     return render(request, 'dashboard.html', context)
-
 
 
 
@@ -578,6 +715,7 @@ def create_client(request):
 
 
 # LOAN
+
 @login_required
 def create_loan(request):
     if request.method == 'POST':
@@ -665,24 +803,41 @@ def create_deposit(request):
         expected = request.POST.get('expected')
         collected = request.POST.get('collected')
 
-        client = Client.objects.get(id=client_id)
+        if not client_id:
+            messages.error(request, "Please select a client.")
+            return redirect('create_deposit')
 
-        # Create a new deposit
-        new_deposit = Deposit(client=client, product=product, expected=expected, collected=collected)
-        new_deposit.save()
+        try:
+            if request.user.is_staff:
+                client = Client.objects.get(id=client_id)
+            else:
+                client = Client.objects.get(id=client_id, user=request.user)
 
-        messages.success(request, "Deposit created successfully.")
-        return redirect('deposit_list')  # Redirect to the create_deposit page
+            Deposit.objects.create(
+                client=client,
+                product=product,
+                expected=expected,
+                collected=collected,
+                user=request.user
+            )
 
-    # GET request: Display the form
+            messages.success(request, "Deposit created successfully.")
+            return redirect('deposit_list')
+
+        except Client.DoesNotExist:
+            messages.error(request, "Invalid client selected.")
+            return redirect('create_deposit')
+
+    # GET request
     if request.user.is_staff:
-        
         clients = Client.objects.all()
     else:
-        
         clients = Client.objects.filter(user=request.user)
 
     return render(request, 'deposit_form.html', {'clients': clients})
+
+
+
 
 
 @login_required
@@ -809,26 +964,24 @@ def deposit_list(request):
     return render(request, 'deposit_list.html', {'deposits': unique_deposits})
 
 
+
+
+
 @login_required
 def loan_list(request):
-
     if request.user.is_staff:
-        loans = Loan.objects.all()  # Admin sees all loans
+        loans = Loan.objects.all()
     else:
-        loans = Loan.objects.filter(user=request.user)  
-        return render(request, 'loan_list.html', {'loans': loans})
+        # Only loans for the logged-in user’s clients
+        loans = Loan.objects.filter(client__user=request.user)
 
-    loans = Loan.objects.all()
-    return render(request,'loan_list.html',{'loans':loans})
-
-
-
-
+    return render(request, 'loan_list.html', {'loans': loans})
 
 
 
 
 # POST PAYMENT
+
 @login_required
 def post_payment(request):
     if request.user.is_superuser:
@@ -836,7 +989,7 @@ def post_payment(request):
         loans = Loan.objects.all()
     else:
         clients = Client.objects.filter(user=request.user)
-        loans = Loan.objects.filter(user=request.user)
+        loans = Loan.objects.filter(client__user=request.user)  # FIXED
 
     if request.method == 'POST':
         client_id = request.POST.get('client_id')
@@ -844,13 +997,11 @@ def post_payment(request):
         recorded_by = request.POST.get('recorded_by')
         amount = request.POST.get('amount')
 
-        # Validate and get client
-        client = get_object_or_404(Client, id=client_id, user=request.user)
+        # Validate client and loan
+        client = get_object_or_404(Client, id=client_id, user=request.user if not request.user.is_superuser else None)
+        loan = get_object_or_404(Loan, id=loan_id, client=client)
 
-        # Validate and get loan
-        loan = Loan.objects.get(id=loan_id)
-
-
+        # Validate amount
         try:
             amount = Decimal(amount)
         except:
@@ -860,12 +1011,12 @@ def post_payment(request):
         if amount <= 0:
             messages.error(request, "Payment must be greater than 0")
             return redirect("post_payment")
-        
+
         if amount > loan.olb:
             messages.error(request, "Payment exceeds outstanding balance")
             return redirect("post_payment")
 
-        # Save payment history
+        # Save payment
         PaymentHistory.objects.create(
             client=client,
             loan=loan,
@@ -892,20 +1043,33 @@ def post_payment(request):
 
 
 
+
 @login_required
 def update_payment(request, payment_id):
-    payment = get_object_or_404(PaymentHistory, id=payment_id, loan__user=request.user)
-    clients = Client.objects.filter(user=request.user)
-    loans = Loan.objects.filter(user=request.user)
+    # Admin can edit any payment, normal user only their own
+    if request.user.is_superuser:
+        payment = get_object_or_404(PaymentHistory, id=payment_id)
+        clients = Client.objects.all()
+        loans = Loan.objects.all()
+    else:
+        payment = get_object_or_404(PaymentHistory, id=payment_id, loan__client__user=request.user)
+        clients = Client.objects.filter(user=request.user)
+        loans = Loan.objects.filter(client__user=request.user)
 
     if request.method == "POST":
         client_id = request.POST.get("client_id")
         loan_id = request.POST.get("loan_id")
         raw_amount = request.POST.get("amount", "0")
 
-        client = get_object_or_404(Client, id=client_id, user=request.user)
-        loan = get_object_or_404(Loan, id=loan_id, client=client, user=request.user)
+        # Validate client
+        if request.user.is_superuser:
+            client = get_object_or_404(Client, id=client_id)
+            loan = get_object_or_404(Loan, id=loan_id, client=client)
+        else:
+            client = get_object_or_404(Client, id=client_id, user=request.user)
+            loan = get_object_or_404(Loan, id=loan_id, client__user=request.user)
 
+        # Validate amount
         try:
             amount = Decimal(raw_amount)
         except:
@@ -915,12 +1079,15 @@ def update_payment(request, payment_id):
         if amount <= 0:
             messages.error(request, "Payment must be greater than 0")
             return redirect("update_payment", payment_id=payment.id)
+
         if amount > loan.olb + payment.amount:  # allow editing previous amount
             messages.error(request, "Payment exceeds outstanding balance")
             return redirect("update_payment", payment_id=payment.id)
 
         # Adjust previous loan paid amount
         loan.paid -= payment.amount  # remove old payment
+
+        # Update payment record
         payment.amount = amount
         payment.client = client
         payment.loan = loan
@@ -928,7 +1095,7 @@ def update_payment(request, payment_id):
         payment.recorded_by = request.user.username
         payment.save()
 
-        # Recalculate loan paid
+        # Recalculate loan paid and installments
         loan.paid += amount
         if loan.installment_amount > 0:
             loan.paid_installments = min(
@@ -946,6 +1113,9 @@ def update_payment(request, payment_id):
         "loans": loans,
         "payment": payment
     })
+
+
+
 
 
 
@@ -970,17 +1140,19 @@ def delete_payment(request, payment_id):
 
 
 
-
-# PAYMENT HISTORY
 @login_required
 def payment_history(request):
     try:
         if request.user.is_superuser:
-            payments = PaymentHistory.objects.all()
+            payments = PaymentHistory.objects.all().order_by('-payment_date')
         else:
-            payments = PaymentHistory.objects.filter(loan__user=request.user).order_by('-payment_date')
-        
+            payments = PaymentHistory.objects.filter(
+                loan__client__user=request.user
+            ).order_by('-payment_date')
+
         return render(request, "payment_history.html", {"payments": payments})
     
     except Exception as e:
-        return render(request, "payment_history.html", {"error": "An error occurred while fetching payment history."})
+        return render(request, "payment_history.html", {
+            "error": "An error occurred while fetching payment history."
+        })

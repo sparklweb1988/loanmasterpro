@@ -6,6 +6,7 @@ from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.utils.timezone import now
 from django.dispatch import receiver
+from django.utils import timezone
 
 
 
@@ -155,17 +156,30 @@ PLAN_CHOICES = [
     ('business', 'Business'),
 ]
 
+PLAN_CHOICES = [
+    ('starter', 'Starter'),
+    ('professional', 'Professional'),
+    ('business', 'Business'),
+]
+
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     plan = models.CharField(max_length=20, choices=PLAN_CHOICES, default='starter')
     is_paid = models.BooleanField(default=False)
     paid_until = models.DateTimeField(null=True, blank=True)
 
+    @property
     def is_active(self):
+        """
+        Return True if the plan is paid and not expired
+        Can now be used in templates and views as profile.is_active
+        """
         return self.is_paid and self.paid_until and self.paid_until > timezone.now()
 
     def __str__(self):
         return f"{self.user.username} ({self.plan})"
+
+        
 
 
 # Signal to auto-create profile on new user

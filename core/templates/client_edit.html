@@ -5,8 +5,8 @@
 {% load static %}
 
 {% block content %}
-  <h1>Edit Client</h1>
-
+<div class="container">
+  <h2>Edit Client</h2>
   <form method="POST">
     {% csrf_token %}
     <div>
@@ -23,7 +23,7 @@
       <label for="branch">Branch:</label>
       <select name="branch" required>
         {% for branch in branches %}
-          <option value="{{ branch.id }}" {% if branch == client.branch %}selected{% endif %}>{{ branch.name }}</option>
+        <option value="{{ branch.id }}" {% if branch == client.branch %}selected{% endif %}>{{ branch.name }}</option>
         {% endfor %}
       </select>
     </div>
@@ -32,7 +32,8 @@
       <label for="credit_officer">Credit Officer:</label>
       <select name="credit_officer" required>
         {% for officer in credit_officers %}
-          <option value="{{ officer.id }}" {% if officer == client.credit_officer %}selected{% endif %}>{{ officer.name }}</option>
+        <option value="{{ officer.id }}" {% if officer == client.credit_officer %}selected{% endif %}>{{ officer.name }}
+        </option>
         {% endfor %}
       </select>
     </div>
@@ -41,7 +42,7 @@
       <label for="center">Center:</label>
       <select name="center" required>
         {% for center in centers %}
-          <option value="{{ center.id }}" {% if center == client.center %}selected{% endif %}>{{ center.name }}</option>
+        <option value="{{ center.id }}" {% if center == client.center %}selected{% endif %}>{{ center.name }}</option>
         {% endfor %}
       </select>
     </div>
@@ -49,18 +50,11 @@
 
     <div>
       <button type="submit">Save Changes</button>
+      <br><br>
+      <a href="{% url 'client_list' %}">Back to Client List</a>
     </div>
   </form>
-
-  <a href="{% url 'client_list' %}">Back to Client List</a>
-
-
-        <div class="form-group">
-            <button type="submit">Save Changes</button>
-            <br>
-            <a href="{% url 'client_list' %}">Cancel</a>
-        </div>
-    </form>
 </div>
+
 
 {% endblock %}
